@@ -1,0 +1,18 @@
+import React from 'react';
+import PropTypes from 'prop-types';
+import './Loader.css';
+
+const TransparentLoader = ({ message }) => {
+    return (
+        <div className="transparent-loader-container">
+            <div className="transparent-loader"></div>
+            <p className="transparent-loader-message">{message}</p>
+        </div>
+    );
+};
+
+export default TransparentLoader;
+
+TransparentLoader.propTypes = {
+    message: PropTypes.string.isRequired
+};

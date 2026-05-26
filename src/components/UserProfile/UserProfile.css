@@ -1,0 +1,14 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9;
+    border: none;
+    margin: 0;
+}
+
+.custom-card .ant-space{
+    width: 40%; /* Telephone ??? */
+}
+
+.custom-select{
+    width: 200px; /* Telephone ??? */
+}

@@ -1,0 +1,376 @@
+import React, { useEffect, useState, useCallback, useRef, useContext } from 'react';
+import ResultInputModal from './Modals/ResultInputModal';
+import { getMatches, updateMatchResult } from '../../api/matchesService';
+import { getLocaleDate } from '../../utils/dateUtils.js';
+import { GlobalContext } from '../../App';
+import { DATA, MESSAGES, CONSOLE, LOADER, ADMIN, STAFF, VISITOR } from '../../utils/constants';
+import PlayerTooltip from '../Tooltips/PlayerTooltip/PlayerTooltip';
+import TeamTooltip from '../Tooltips/PlayerTooltip/TeamTooltip';
+import PropTypes from 'prop-types';
+
+import './Home.css'; 
+
+const Home = ({ startDate, endDate, defaultDate }) => {
+    const { setGlobalSuccessMessage, setGlobalErrorMessage, role, getRoleName } = useContext(GlobalContext);
+
+    const [currentDate, setCurrentDate] = useState(defaultDate);
+    const [planningText, setPlanningText] = useState(DATA.PLANNING);
+    const [dateText, setDateText] = useState(DATA.VOID_DATE);
+    const [schedule, setSchedule] = useState([]);
+    const [showModal, setShowModal] = useState(false);
+    const [currentMatch, setCurrentMatch] = useState(null);
+    const [previousDate, setPreviousDate] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [viewProfile, setViewProfile] = useState(role);
+    const [noResult, setNoResult] = useState(false);
+    const currentDateRef = useRef(currentDate);
+    
+    const formatDate = useCallback((date) => {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        return `${day}/${month}`;
+      }, []);
+
+    const updateDate = useCallback((date) => {
+        const formattedDate = formatDate(date);
+        setPlanningText(`Planning du ${formattedDate}`);
+        setDateText(formattedDate);
+    }, [formatDate]);
+
+    useEffect(() => {
+        updateDate(currentDate);
+    }, [currentDate, updateDate]);
+
+    useEffect(() => {
+        const fetchMatches = async () => {
+            const formattedDate = getLocaleDate(currentDate);
+            try { return await getMatches(formattedDate); }
+            catch (error) { console.error(CONSOLE.FETCH.MATCHES, error); }
+        };
+
+        const initializeAll = async () => {
+            setSchedule([]);
+            setIsLoading(true);
+            const [matches] = await Promise.all([fetchMatches()]);
+            if (currentDateRef.current !== currentDate) return;
+            setSchedule(matches);
+            setIsLoading(false);
+            let result = false;
+            matches.forEach(match =>{
+                if (match.winner || (match.score && match.score !== "")){
+                    result = true;
+                }
+            })
+            setNoResult(!result);
+        };
+        
+        if (currentDate !== previousDate) {
+            initializeAll()
+                .catch(error => {
+                    setGlobalErrorMessage(MESSAGES.ERROR.GET.MATCHES);
+                    console.error(CONSOLE.FETCH.MATCHES, error);
+                });
+            setPreviousDate(currentDate);
+            currentDateRef.current = currentDate;
+        }
+    }, [currentDate, previousDate, setGlobalErrorMessage]);
+
+    const getNextDay = (date) => {
+        const nextDay = new Date(date);
+        nextDay.setDate(date.getDate() + 1);
+        return nextDay;
+    };
+
+    const canViewDate = useCallback((date) => {
+        if (role === VISITOR) return date <= defaultDate;
+        if (role === STAFF) return date <= getNextDay(defaultDate);
+        return true;
+    }, [role, defaultDate]);
+    
+    const handlePrevDay = useCallback(() => {
+        const newDate = new Date(currentDate);
+        newDate.setDate(currentDate.getDate() - 1);
+        if (newDate >= startDate) {
+            setCurrentDate(newDate);
+        }
+    }, [currentDate, startDate]);
+
+    const handleNextDay = useCallback(() => {
+        const newDate = new Date(currentDate);
+        newDate.setDate(currentDate.getDate() + 1);
+        if (newDate <= endDate && canViewDate(newDate)) {
+            setCurrentDate(newDate);
+        }
+    }, [currentDate, endDate, canViewDate]);
+    
+    useEffect(() => {
+        const handleKeyPress = (event) => {
+            if(event.key === 'ArrowLeft' && !showModal) handlePrevDay();
+            else if (event.key === 'ArrowRight' && !showModal) handleNextDay();
+        };
+        window.addEventListener('keydown', handleKeyPress);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyPress);
+        };
+    }, [handleNextDay, handlePrevDay, showModal]);
+
+    const handleEditResult = (match) => {
+        setCurrentMatch(match);
+        setShowModal(true);
+    };
+
+    const handleSaveResult = async (matchId, playerId, score) => {
+        if (!playerId) {
+            score = null;
+        }
+        if (playerId || (score && score !== "")){
+            setNoResult(false);
+        }
+        let finish = 0;
+        let double = false;
+        setSchedule(prevSchedule => {
+            return prevSchedule.map(match => {
+                if (match.id !== matchId) return match;
+                let winner = getWinnerName(match, playerId);
+                finish = winner === null ? 0 : 1;
+                double = match.double;
+                return { ...match, score, winner: winner, winnerId: playerId, finish: finish};
+            });
+        });
+        setShowModal(false);
+        try {
+            await updateMatchResult(matchId, playerId, score, finish, double);
+            setGlobalSuccessMessage(MESSAGES.SUCCESS.UPDATE.RESULT);
+        } catch (error) {
+            setGlobalErrorMessage(MESSAGES.ERROR.UPDATE.RESULT);
+        }
+    };
+
+    const getWinnerName = (match, playerId) => {
+        if (!match || !playerId) {
+            return null;
+        }
+        const fullName = match.player1Id === playerId ? match.player1.fullName : match.player2.fullName;
+        return { 'fullName': fullName };
+    };
+
+    const getResultValue = (match) => {
+        let value = match.winner.fullName;
+        if (match.score) {
+            value += ` (${match.score})`;
+        }
+        return value;
+    };
+
+    const switchViewProfile = () => {
+        if (viewProfile === 0) setViewProfile(role);
+        else setViewProfile(0);
+    };
+
+    const getPlayerClassName = () => {
+        if (viewProfile === VISITOR && noResult) return 'schedule-col-player-43 with-border';
+        if (viewProfile === VISITOR) return 'schedule-col-player-28 with-border';
+        if (viewProfile === STAFF) return 'schedule-col-player-22';
+        return 'schedule-col-player-19';
+    }
+
+    const getCategoryClassName = () => {
+        if (viewProfile === VISITOR) return 'schedule-col-cat with-border';
+        if (viewProfile === STAFF) return 'schedule-col-cat';
+    }
+
+    const getCourt = (court) => {
+        if (viewProfile === VISITOR) return <td className="schedule-col-court-0"></td>;
+        return <td className="schedule-col-court-8">{court ? court.number : ''}</td>;
+    }
+
+    const getCategory = (category) => {
+        if (category === "Simple Messieurs Senior") return "SM Senior";
+        if (category === "Simple Messieurs 35 ans") return "SM 35+";
+        if (category === "Simple Dames Senior") return "SD Senior";
+        if (category === "Consolante Simple Dames Senior") return "Conso. D";
+        if (category === "Consolante Simple Messieurs Senior") return "Conso. M";
+        if (category === "Consolante Simple Messieurs 35 ans") return "Conso. 35+M";
+        return category;
+    }
+
+    const putPlayerTooltip = (match, player) => {
+        if(viewProfile !== ADMIN) return;
+        if(match.double && player === 1 && match.player1) return (<TeamTooltip className='black-row' team={match.player1} table={true} />);
+        if(match.double && player === 2 && match.player2) return (<TeamTooltip className='black-row' team={match.player2} table={true} />);
+        if(player === 1 && match.player1) return (<PlayerTooltip className='black-row' player={match.player1} table={true} />);
+        if(player === 2 && match.player2) return (<PlayerTooltip className='black-row' player={match.player2} table={true} />);
+        return (<td className="schedule-actions"></td>);
+    }
+
+    const displayPlayer = (player, futurPlayer) => {
+        if (player) {
+            let display = player.fullName;
+            if (player.ranking){
+                display += " (" + player.ranking + ")"
+            }
+            return display
+        }
+        if(futurPlayer) {
+            if (futurPlayer === "QE") return futurPlayer
+            if (futurPlayer.includes("SD")) return "Vainqueure du " + futurPlayer;
+            return "Vainqueur du " + futurPlayer;
+        }
+    }
+
+    const showSwitch = () => {
+        if (role === VISITOR) return;
+        return (
+            <div className="switch-container">
+                <label className="switch">
+                    <input type="checkbox" checked={viewProfile > VISITOR } onChange={() => switchViewProfile()} />
+                    <span className="slider round"></span>
+                    <span className="visually-hidden">""</span>
+                </label>
+                <span className="switch-label">{getRoleName(viewProfile)}</span>
+            </div>
+        )
+    }
+
+    const matchResult = (match) => {
+        if(match.winner) {
+            if (viewProfile === VISITOR) return (<td className="schedule-col-result-31 with-border">{getResultValue(match)}</td>);
+            return (
+                <>
+                    <td className="schedule-col-result-25">{getResultValue(match)}</td>
+                    <td className="schedule-col-edit"> <button className="gray-button" onClick={() => handleEditResult(match)}>Modifier</button></td>
+                </>
+            )
+        }
+        if (viewProfile === VISITOR && noResult) return (<td></td>);
+        if (viewProfile === VISITOR) return (<td className="schedule-col-result-31 with-border"></td>);
+        return (
+            <>
+                <td className="schedule-col-result-25"><button className="gray-button" onClick={() => handleEditResult(match)}>Renseigner un résultat</button></td>
+                <td className="schedule-col-edit"></td>
+            </>
+        )
+    }
+
+    const scheduleHeaders = () => {
+        if(schedule?.length > 0) {
+            return (
+                <thead className="header">
+                    <tr>
+                        <th>{DATA.HOURS}</th>
+                        {viewProfile !== VISITOR && <th className="with-border">Court </th>}
+                        {viewProfile === VISITOR && <th></th>}
+                        <th className="with-border">{DATA.CATEGORY}</th>
+                        <th colSpan={3}  className="with-border">{DATA.PLAYER_1}</th>
+                        <th colSpan={3}  className="with-border">{DATA.PLAYER_2}</th>
+                        {(viewProfile !== VISITOR || !noResult) && <th  className="with-border">{DATA.RESULT}</th>}
+                        {viewProfile === VISITOR && noResult && <th></th>}
+                        <th className="with-border"></th>
+                    </tr>
+                </thead>
+            );
+        }
+        return (
+            <thead className="header">
+                <tr>
+                    <th colSpan={10} className="full-width">{DATA.NO_MATCHES} {dateText}</th>
+                </tr>
+            </thead>
+        );
+    };
+
+    const scheduleList = () => {
+        return (
+        <div className='schedule-table-container'>
+            <table className="schedule-table">
+                {scheduleHeaders()}
+                <tbody>
+                    {schedule?.map((match) => (
+                        <tr className='black-row' key={match}>
+                            <td className="schedule-col-hour">{match.hour}</td>
+                            {getCourt(match.court)}
+                            <td className={getCategoryClassName()}>{getCategory(match.categoryLabel)}</td>
+                            <td className={`${getPlayerClassName()} black-row`} colSpan={viewProfile === ADMIN ? 1 : 3}>{displayPlayer(match.player1, match.futurPlayer1)}</td>
+                            {putPlayerTooltip(match, 1)}
+                            <td className={`${getPlayerClassName()} black-row`} colSpan={viewProfile === ADMIN ? 1 : 3}>{displayPlayer(match.player2, match.futurPlayer2)}</td>
+                            {putPlayerTooltip(match, 2)}
+                            {matchResult(match)}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+        )
+    }
+
+    const planning = () => {
+
+        if(isLoading) {
+            return (
+                <div className="planning-text">
+                    <p>{LOADER.PLANNING} {dateText}...</p>
+                </div>
+            )
+        }
+
+        return (
+            <div className="planning-text">
+                <p>{planningText}</p>
+            </div>
+        )
+    }
+
+    const changeDateOnPicker = (e) => {
+        let date = new Date(e.target.value)
+        if (canViewDate(date)){
+            setCurrentDate(date);
+        }
+    }
+
+    const getMaxDate = () => {
+        let maxDate = endDate ? getLocaleDate(endDate) : undefined;
+        if (role === VISITOR) maxDate = getLocaleDate(defaultDate);
+        if (role === STAFF) maxDate = getLocaleDate(getNextDay(defaultDate));
+        return maxDate;
+    }
+
+    return (
+        <div>
+            {showSwitch()}
+            <div className="calendar-container">
+                <button id="prevDay" className="arrow-button" 
+                    onClick={handlePrevDay}
+                    disabled={currentDate <= startDate}
+                >&#8249;</button>
+                <input type="date" id="datePicker" 
+                    value={currentDate ? getLocaleDate(currentDate) : ''} // Affiche rien tant que currentDate est null
+                    onChange={(e) => changeDateOnPicker(e)} 
+                    min={startDate ? getLocaleDate(startDate) : undefined}
+                    max={getMaxDate()}
+                />
+                <button id="nextDay" className="arrow-button" 
+                    onClick={handleNextDay}
+                    disabled={currentDate >= endDate}
+                >&#8250;</button>
+            </div>
+            {planning()}
+            {!isLoading && scheduleList()}
+            {showModal && (
+                <ResultInputModal
+                    match={currentMatch}
+                    onClose={() => setShowModal(false)}
+                    onSave={handleSaveResult}
+                />
+            )}
+        </div>
+    );
+};
+
+export default Home;
+
+Home.propTypes = {
+    startDate: PropTypes.string.isRequired,
+    endDate: PropTypes.string.isRequired,
+    defaultDate: PropTypes.string.isRequired
+};

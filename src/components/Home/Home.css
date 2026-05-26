@@ -1,0 +1,251 @@
+body {
+    flex-direction: column;
+}
+
+.calendar-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Style pour le date picker */
+#datePicker {
+    padding: 5px;
+    font-size: 30px; /* Augmenter la taille de la police du calendrier */
+    border: none; /* Pas de bordure */
+    outline: none; /* Pas de contour lors de la sélection */
+    box-shadow: none; /* Pas d'ombre */
+    background-color: #f4f4f9;
+    color: black;
+}
+
+/* Ajout de marges pour éloigner les flèches du calendrier */
+#prevDay {
+    margin-right: 50px; /* Espace à droite de la flèche gauche */
+}
+
+#nextDay {
+    margin-left: 50px; /* Espace à gauche de la flèche droite */
+}
+
+/* Style pour le texte de planning */
+.planning-text {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 24px;
+}
+
+.schedule-table-container {
+    width: 70%;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    flex: 1;
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    border: 1px solid #ccc;
+}
+
+.with-border {
+  border-left: 1px solid #ddd;
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.schedule-table th,
+.schedule-table td {
+    padding-left: 0px;
+    padding-right: 0px;
+    height: 50px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+.schedule-table th {
+    font-weight: 600;
+}
+
+.schedule-table tbody tr:hover {
+    background-color: #f8f8f8;
+}
+
+.schedule-col-hour {
+    width: 13%
+}
+
+.schedule-col-cat {
+    width: 10%;
+}
+
+.schedule-col-court-0 {
+    width: 0%
+}
+
+.schedule-col-court-8 {
+    width: 8%
+}
+
+.schedule-col-player-19 {
+    padding-left: 10px !important;
+    width: 14%
+}
+
+.schedule-col-player-22 {
+    padding-left: 10px !important;
+    width: 17%
+}
+
+.schedule-col-player-28 {
+    padding-left: 10px !important;
+    width: 23%
+}
+
+.schedule-col-player-43 {
+    padding-left: 10px !important;
+    width: 38.5%
+}
+
+.info-circle {
+    width: 2%
+}
+
+.schedule-actions {
+    width: 1%;
+}
+
+.schedule-col-result-25 {
+    width: 25%
+}
+
+.schedule-col-result-31 {
+    width: 31%
+}
+
+.schedule-col-edit {
+    width: 10%
+}
+
+.header {
+    background-color: #f0f0f0; /* Couleur de fond pour l'en-tête */
+    font-weight: bold; /* Met le texte en gras */
+}
+
+.header span {
+    display: inline-block; /* Utilise un affichage en bloc */
+    width: 15%; /* Largeur des colonnes pour l'en-tête */
+    padding: 10px; /* Ajoute du padding */
+}
+
+.gray-button {
+    background-color: #ccc; /* Couleur de fond grise */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-left: 10px; /* Espace entre le texte et le bouton */
+    font-size: 14px;
+    height: 35px;
+    color: black;
+}
+
+.gray-button:hover {
+    background-color: #bbb; /* Couleur de fond plus foncée au survol */
+}
+
+.gray-button:disabled {
+    background-color: #eee; /* Couleur de fond pour le bouton désactivé */
+    cursor: not-allowed; /* Change le curseur pour indiquer que le bouton est désactivé */
+}
+
+.switch-container {
+    position: absolute; /* Position it at the top right */
+    top: 20px; /* Adjust as needed */
+    right: 20px; /* Adjust as needed */
+    display: flex;
+    align-items: center;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 28px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 2px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+.switch-label {
+    width: 60px;
+    margin-left: 8px;
+}
+
+.red-row {
+    color: red;
+}
+
+.green-row {
+    color: green;
+}
+
+.blue-row {
+    color: blue;
+}
+
+.violet-row {
+    color: violet;
+}
+
+.black-row {
+    color: black;
+}
+
+.yellow-row {
+    color: yellow;
+}
+
+.orange-row {
+    color: orange;
+}

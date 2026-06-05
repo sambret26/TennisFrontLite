@@ -19,7 +19,6 @@ const Settings = ({ setSettingError, setReload }) => {
   const [competitions, setCompetitions] = useState([]);
   const [selectedCompetition, setSelectedCompetition] = useState(null);
   const [batchsEnabled, setBatchsEnabled] = useState(false);
-  const [initialCompetition, setInitialCompetition] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isTransparentLoading, setIsTransparentLoading] = useState(false);
   const [transparentLoaderMessage, setTransparentLoaderMessage] = useState(LOADER.SETTINGS_UPDATE);
@@ -34,7 +33,6 @@ const Settings = ({ setSettingError, setReload }) => {
         const activeCompetition = competitionsData.find(c => c.isActive === true);
         if (activeCompetition) {
           setSelectedCompetition(activeCompetition.homologationId);
-          setInitialCompetition(activeCompetition.homologationId);
         }
 
         const batchsActive = await getBatchsActive();
@@ -82,7 +80,6 @@ const Settings = ({ setSettingError, setReload }) => {
       if (batchActive) {
         await updateBatchsActive("1");
       }
-      setInitialCompetition(selectedCompetition);
       setGlobalSuccessMessage(MESSAGES.SUCCESS.UPDATE.COMPETITION);
       setIsTransparentLoading(false);
       setSettingError(false);
@@ -142,7 +139,7 @@ const Settings = ({ setSettingError, setReload }) => {
             <Col span={6}>
               <Button
                 type="primary"
-                disabled={selectedCompetition === null || selectedCompetition === initialCompetition}
+                disabled={selectedCompetition === null}
                 onClick={() => setShowConfirmation(true)}
                 className="settings-button"
               >

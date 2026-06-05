@@ -46,8 +46,8 @@ const ResultInputModal = ({ match, onClose, onSave }) => {
         } else {
             scoreRef.current = '';
         }
-        onSave(match.id, selectedPlayerRef.current, scoreRef.current);
-    }, [match.id, onSave]);
+        onSave(match.fftId, selectedPlayerRef.current, scoreRef.current);
+    }, [match.fftId, onSave]);
 
     useEffect(() => {
         selectedPlayerRef.current = selectedPlayer;
@@ -109,24 +109,23 @@ const ResultInputModal = ({ match, onClose, onSave }) => {
             className="result-input-modal"
         >
             <div className="radio-label">
-                <label htmlFor={`player1-${match.id}`}>{match.player1.fullName}</label>
+                <label htmlFor={`player1-${match.fftId}`}>{match.player1.fullName}</label>
                 <input
                     type="radio"
-                    id={`player1-${match.id}`}
+                    id={`player1-${match.fftId}`}
                     checked={selectedPlayer === match.player1Id}
                     onClick={() => handleRadioChange(match.player1Id)}
                     onChange={()=> {}}
                 />
-                <label htmlFor="vs">{DATA.VS}</label>
-                <input className='visually-hidden' id="vs" type="radio" />
+                <span className="vs-label">{DATA.VS}</span>
                 <input
                     type="radio"
-                    id={`player2-${match.id}`}
+                    id={`player2-${match.fftId}`}
                     checked={selectedPlayer === match.player2Id}
                     onClick={() => handleRadioChange(match.player2Id)}
                     onChange={() => {}}
                 />
-                <label htmlFor={`player2-${match.id}`}>{match.player2.fullName}</label>
+                <label htmlFor={`player2-${match.fftId}`}>{match.player2.fullName}</label>
             </div>
             <Input
                 type="text"

@@ -131,7 +131,7 @@ const Home = ({ startDate, endDate, defaultDate }) => {
         let double = false;
         setSchedule(prevSchedule => {
             return prevSchedule.map(match => {
-                if (match.id !== matchId) return match;
+                if (match.fftId !== matchId) return match;
                 let winner = getWinnerName(match, playerId);
                 finish = winner === null ? 0 : 1;
                 double = match.double;
@@ -185,16 +185,6 @@ const Home = ({ startDate, endDate, defaultDate }) => {
         return <td className="schedule-col-court-8">{court ? court.number : ''}</td>;
     }
 
-    const getCategory = (category) => {
-        if (category === "Simple Messieurs Senior") return "SM Senior";
-        if (category === "Simple Messieurs 35 ans") return "SM 35+";
-        if (category === "Simple Dames Senior") return "SD Senior";
-        if (category === "Consolante Simple Dames Senior") return "Conso. D";
-        if (category === "Consolante Simple Messieurs Senior") return "Conso. M";
-        if (category === "Consolante Simple Messieurs 35 ans") return "Conso. 35+M";
-        return category;
-    }
-
     const putPlayerTooltip = (match, player) => {
         if(viewProfile !== ADMIN) return;
         if(match.double && player === 1 && match.player1) return (<TeamTooltip className='black-row' team={match.player1} table={true} />);
@@ -245,10 +235,18 @@ const Home = ({ startDate, endDate, defaultDate }) => {
         }
         if (viewProfile === VISITOR && noResult) return (<td></td>);
         if (viewProfile === VISITOR) return (<td className="schedule-col-result-31 with-border"></td>);
+        if (match.player1 == null || match.player2 == null) {
+            return (
+                <>
+                    <td className="schedule-col-result-25"></td>
+                    {!noResult && <td className="schedule-col-edit"></td>}
+                </>
+                )
+            }
         return (
             <>
                 <td className="schedule-col-result-25"><button className="gray-button" onClick={() => handleEditResult(match)}>Renseigner un résultat</button></td>
-                <td className="schedule-col-edit"></td>
+                {!noResult && <td className="schedule-col-edit"></td>}
             </>
         )
     }
@@ -262,9 +260,9 @@ const Home = ({ startDate, endDate, defaultDate }) => {
                         {viewProfile !== VISITOR && <th className="with-border">Court </th>}
                         {viewProfile === VISITOR && <th></th>}
                         <th className="with-border">{DATA.CATEGORY}</th>
-                        <th colSpan={3}  className="with-border">{DATA.PLAYER_1}</th>
-                        <th colSpan={3}  className="with-border">{DATA.PLAYER_2}</th>
-                        {(viewProfile !== VISITOR || !noResult) && <th  className="with-border">{DATA.RESULT}</th>}
+                        <th colSpan={2}  className="with-border">{DATA.PLAYER_1}</th>
+                        <th colSpan={2}  className="with-border">{DATA.PLAYER_2}</th>
+                        {(viewProfile !== VISITOR || !noResult) && <th className="with-border">{DATA.RESULT}</th>}
                         {viewProfile === VISITOR && noResult && <th></th>}
                         <th className="with-border"></th>
                     </tr>
@@ -274,7 +272,7 @@ const Home = ({ startDate, endDate, defaultDate }) => {
         return (
             <thead className="header">
                 <tr>
-                    <th colSpan={10} className="full-width">{DATA.NO_MATCHES} {dateText}</th>
+                    <th colSpan={8} className="full-width">{DATA.NO_MATCHES} {dateText}</th>
                 </tr>
             </thead>
         );
@@ -287,13 +285,13 @@ const Home = ({ startDate, endDate, defaultDate }) => {
                 {scheduleHeaders()}
                 <tbody>
                     {schedule?.map((match) => (
-                        <tr className='black-row' key={match}>
+                        <tr className='black-row' key={match.fftId}>
                             <td className="schedule-col-hour">{match.hour}</td>
                             {getCourt(match.court)}
-                            <td className={getCategoryClassName()}>{getCategory(match.categoryLabel)}</td>
-                            <td className={`${getPlayerClassName()} black-row`} colSpan={viewProfile === ADMIN ? 1 : 3}>{displayPlayer(match.player1, match.futurPlayer1)}</td>
+                            <td className={getCategoryClassName()}>{match.categoryCode}</td>
+                            <td className={`${getPlayerClassName()} black-row`} colSpan={viewProfile === ADMIN ? 1 : 2}>{displayPlayer(match.player1, match.futurPlayer1)}</td>
                             {putPlayerTooltip(match, 1)}
-                            <td className={`${getPlayerClassName()} black-row`} colSpan={viewProfile === ADMIN ? 1 : 3}>{displayPlayer(match.player2, match.futurPlayer2)}</td>
+                            <td className={`${getPlayerClassName()} black-row`} colSpan={viewProfile === ADMIN ? 1 : 2}>{displayPlayer(match.player2, match.futurPlayer2)}</td>
                             {putPlayerTooltip(match, 2)}
                             {matchResult(match)}
                         </tr>

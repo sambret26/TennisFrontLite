@@ -157,7 +157,7 @@ const scoreOk = (score) => {
     let winnerSet2 = checkScore(sets[1]);
     if (!winnerSet2) return false;
     if (winnerSet1 === winnerSet2) {
-        return sets.length === 2;
+        return sets.length === 2 && winnerSet1 === 1;
     }
     if (sets.length !== 3) return false;
     return checkScore(sets[2], true) !== 0;
@@ -174,7 +174,7 @@ const isValidScore = (score) => {
 };
 
 const checkWinningConditions = (scoreSet, tieBreak, last) => {
-    if (last && (parseInt(scoreSet[0]) >= 10 || parseInt(scoreSet[1]) >= 10)) return 1;
+    if (last && parseInt(scoreSet[0]) >= 10 && parseInt(scoreSet[0]) > parseInt(scoreSet[1]) + 1) return 1;
 
     if (scoreSet[0] === '7' && scoreSet[1] === '5') return tieBreak ? 0 : 1;
     if (scoreSet[0] === '7' && scoreSet[1] === '6') return 1;
